@@ -60,32 +60,38 @@ class AutoML:
         self.model = None
         self.model_name = None
         self.score = None
-    
-        
-    def preprocess(self, X):       
-        df = pd.read_csv(X) 
+        self.encoder = None
+        self.scaler = None
+
+    def preprocess(self, X):
+        df = pd.read_csv(X)
         df.columns = df.columns.astype(str)
-        X_df = df.iloc[:, :-1]  
-        y = df.iloc[:, -1]      
-        
+        X_df = df.iloc[:, :-1]
+        y = df.iloc[:, -1]
+
         categorical_columns = X_df.select_dtypes(include=['object', 'category']).columns
         if len(categorical_columns) > 0:
             encoder = OneHotEncoder(drop='first', sparse_output=False)
             encoded_columns = encoder.fit_transform(X_df[categorical_columns])
-            encoded_columns = pd.DataFrame(encoded_columns, columns=encoder.get_feature_names_out(categorical_columns))
+            encoded_columns_df = pd.DataFrame(encoded_columns, columns=encoder.get_feature_names_out(categorical_columns))
             X_df = X_df.drop(columns=categorical_columns)
-            X = pd.concat([X_df, pd.DataFrame(encoded_columns)], axis=1)
-            
+            X_processed = pd.concat([X_df, encoded_columns_df], axis=1)
+            scaler = StandardScaler()
+            X_scaled = scaler.fit_transform(X_processed)
+            return X_scaled, y, encoder, scaler
+
+        else:
+            X_scaled = StandardScaler().fit_transform(X_df)
+            return X_scaled, y, None, None
+
         if y.dtype == 'object':
             label_encoder = LabelEncoder()
             y = label_encoder.fit_transform(y)
-        
-        return X, y    
-            
-            
-        
-        
-    def vision_preprocess(self, imgs_data_path):        
+            y = y.astype(int)
+
+        return X, y
+
+    def vision_preprocess(self, imgs_data_path):
         dataset = ImageFolder(imgs_data_path, transform=self.transform)
         torch.manual_seed(42)
         train_dataset, test_dataset = torch.utils.data.random_split(dataset, [0.8, 0.2])
@@ -217,15 +223,20 @@ class AutoML:
             if len(categorical_columns) > 0:
                 encoder = OneHotEncoder(drop='first', sparse_output=False)
                 encoded_columns = encoder.fit_transform(X_df[categorical_columns])
-                encoded_columns = pd.DataFrame(encoded_columns, columns=encoder.get_feature_names_out(categorical_columns))
+                encoded_columns_df = pd.DataFrame(encoded_columns, columns=encoder.get_feature_names_out(categorical_columns))
                 X_df = X_df.drop(columns=categorical_columns)
-                X = pd.concat([X_df, pd.DataFrame(encoded_columns)], axis=1)
+                X = pd.concat([X_df, encoded_columns_df], axis=1)
                 scaler = StandardScaler()
                 X = scaler.fit_transform(X)
                 y_pred = self.model.predict(X)
                 print(f"best model: {self.model_name}, best model predictions: {y_pred}")
+                
+            else:
+                X = X_df
+                scaler = StandardScaler()
+                X = scaler.fit_transform(X)
+                y_pred = self.model.predict(X)
+                print(f"best model: {self.model_name}, best model predictions: {y_pred}")
+                
+                
             return y_pred
-    
-        
-
-    
