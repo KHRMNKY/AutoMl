@@ -68,6 +68,11 @@ class AutoML:
         df.columns = df.columns.astype(str)
         X_df = df.iloc[:, :-1]
         y = df.iloc[:, -1]
+        
+        if y.dtype == 'object':
+            label_encoder = LabelEncoder()
+            y = label_encoder.fit_transform(y)
+            y = y.astype(int)
 
         categorical_columns = X_df.select_dtypes(include=['object', 'category']).columns
         if len(categorical_columns) > 0:
@@ -78,18 +83,11 @@ class AutoML:
             X_processed = pd.concat([X_df, encoded_columns_df], axis=1)
             scaler = StandardScaler()
             X_scaled = scaler.fit_transform(X_processed)
-            return X_scaled, y, encoder, scaler
+            return X_scaled, y
 
         else:
             X_scaled = StandardScaler().fit_transform(X_df)
-            return X_scaled, y, None, None
-
-        if y.dtype == 'object':
-            label_encoder = LabelEncoder()
-            y = label_encoder.fit_transform(y)
-            y = y.astype(int)
-
-        return X, y
+            return X_scaled, y
 
     def vision_preprocess(self, imgs_data_path):
         dataset = ImageFolder(imgs_data_path, transform=self.transform)
