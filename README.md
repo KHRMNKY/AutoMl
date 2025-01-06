@@ -25,7 +25,7 @@ streamlit run streamlit4.py
 ```
 
 ## streamlit 
-![image](https://github.com/user-attachments/assets/8a320cfb-1875-4831-9626-dd77aa1def1f)
+![image](https://github.com/user-attachments/assets/76d20c2a-8e71-4136-b145-01098cd0e10d)
 
 
 ## API
