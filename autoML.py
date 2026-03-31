@@ -200,19 +200,35 @@ class AutoML:
             return 
         
         if self.task == "vision_classification":
-            dataset = ImageFolder(X, transform=self.transform)
-            test_loader = DataLoader(dataset, batch_size=32, shuffle=False) 
-            testLoss=0
-            criterion = nn.CrossEntropyLoss()
-            self.model.eval()
-            for imgs, labels in test_loader:
-                imgs, labels = imgs.to(self.device), labels.to(self.device)
-                test_preds=self.model(imgs)
-                loss= criterion(test_preds, labels)
-                testLoss+=loss.item()
-            testLoss/=len(test_loader)  
-            print(f"best model: {self.model_name}, best model test Loss: {testLoss:.4f}")
-            return test_preds.argmax(dim=1).cpu().numpy().tolist(), labels.cpu().numpy().tolist()
+            
+            from PIL import Image   
+        
+            if os.path.isfile(X):
+                image = Image.open(X).convert('RGB')
+                image_tensor = self.transform(image).unsqueeze(0)
+                
+                self.model.eval()
+                with torch.no_grad():
+                    image_tensor = image_tensor.to(self.device)
+                    test_preds = self.model(image_tensor)
+                
+                return test_preds.argmax(dim=1).cpu().numpy().tolist(), None
+            
+            else:
+                
+                dataset = ImageFolder(X, transform=self.transform)
+                test_loader = DataLoader(dataset, batch_size=32, shuffle=False) 
+                testLoss=0
+                criterion = nn.CrossEntropyLoss()
+                self.model.eval()
+                for imgs, labels in test_loader:
+                    imgs, labels = imgs.to(self.device), labels.to(self.device)
+                    test_preds=self.model(imgs)
+                    loss= criterion(test_preds, labels)
+                    testLoss+=loss.item()
+                testLoss/=len(test_loader)  
+                print(f"best model: {self.model_name}, best model test Loss: {testLoss:.4f}")
+                return test_preds.argmax(dim=1).cpu().numpy().tolist(), labels.cpu().numpy().tolist()
             
         else:
             X_df = pd.read_csv(X)
