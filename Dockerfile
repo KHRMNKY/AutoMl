@@ -1,7 +1,7 @@
-FROM nvidia/cuda:12.0.1-runtime-ubuntu22.04
+FROM nvidia/cuda:13.2.0-cudnn-devel-ubuntu24.04
 
 RUN apt-get update && apt-get install -y \
-    python3.10 \
+    python3 \
     python3-pip 
 
 WORKDIR /app
@@ -9,7 +9,7 @@ WORKDIR /app
 COPY . .
 COPY requirements.txt .
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --break-system-packages -r requirements.txt
 
 EXPOSE 8081
 
